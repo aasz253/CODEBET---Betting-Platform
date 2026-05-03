@@ -34,8 +34,8 @@ const deposit = async (req, res) => {
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' });
         }
-        if (!amount || parseFloat(amount) <= 0) {
-            return res.status(400).json({ error: 'Valid deposit amount is required' });
+        if (!amount || parseFloat(amount) < 1) {
+            return res.status(400).json({ error: 'Minimum deposit amount is 1 KES' });
         }
         const depositAmount = parseFloat(amount);
         const reference = `DEP-${userId}-${Date.now()}-${Math.random().toString(36).substring(7)}`;

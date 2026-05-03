@@ -46,16 +46,16 @@ export const useBetslipStore = create<BetslipState>((set, get) => ({
     newBets[index] = { ...newBets[index], stake };
     return { bets: newBets };
   }),
-  getTotalStake: () => {
+   getTotalStake: () => {
     const { bets } = get();
-    return bets.reduce((sum, bet) => sum + (bet.stake || 0), 0);
+    return bets.reduce((sum: number, bet: Bet) => sum + (bet.stake || 0), 0);
   },
   getTotalPotentialWin: () => {
     const { bets } = get();
-    return bets.reduce((sum, bet) => sum + (bet.stake || 0) * bet.oddsValue, 0);
+    return bets.reduce((sum: number, bet: Bet) => sum + (bet.stake || 0) * bet.oddsValue, 0);
   },
-  updateOddsValue: (marketId, newValue) => set((state) => {
-    const newBets = state.bets.map(bet => {
+  updateOddsValue: (marketId: string, newValue: number) => set((state: BetslipState) => {
+    const newBets = state.bets.map((bet: Bet) => {
       if (bet.marketId === marketId) {
         return { ...bet, oddsValue: newValue, oddsChanged: true, previousOdds: bet.oddsValue };
       }
@@ -63,8 +63,8 @@ export const useBetslipStore = create<BetslipState>((set, get) => ({
     });
     return { bets: newBets };
   }),
-  clearOddsChanged: () => set((state) => {
-    const newBets = state.bets.map(bet => ({ ...bet, oddsChanged: false }));
+  clearOddsChanged: () => set((state: BetslipState) => {
+    const newBets = state.bets.map((bet: Bet) => ({ ...bet, oddsChanged: false }));
     return { bets: newBets };
   }),
 }));

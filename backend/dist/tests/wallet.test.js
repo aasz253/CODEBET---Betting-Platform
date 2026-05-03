@@ -1,140 +1,80 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-// @ts-nocheck
-const supertest_1 = __importDefault(require("supertest"));
+const walletController_1 = require("../controllers/walletController");
 const client_1 = require("@prisma/client");
-const index_1 = __importDefault(require("../src/index"));
-const prisma = new client_1.PrismaClient();
-describe('Wallet API', () => {
-    let authToken;
-    let userId;
-    beforeEach(async () => {
-        await prisma.transaction.deleteMany();
-        await prisma.wallet.deleteMany();
-        await prisma.user.deleteMany();
-        const registerResponse = await (0, supertest_1.default)(index_1.default)
-            .post('/api/auth/register')
-            .send({
-            phoneNumber: '+254712345684',
-            password: 'Password123!',
-            fullName: 'Wallet Test',
-            idNumber: '12345684',
-            dateOfBirth: '1990-01-01',
-        });
-        authToken = registerResponse.body.token;
-        userId = registerResponse.body.user.id;
-        await prisma.user.update({
-            where: { id: userId },
-            data: { isAgeVerified: true },
-        });
+// Mock the referral controller functions
+jest.mock('../controllers/referralController', () => ({
+    checkWelcomeBonus: jest.fn(),
+    checkDepositBonus: jest.fn(),
+}));
+jest.mock('@prisma/client', () => {
+    const mockPrisma = {
+        user: {
+            findUnique: jest.fn(),
+        },
+        wallet: {
+            findUnique: jest.fn(),
+            update: jest.fn(),
+        },
+        transaction: {
+            create: jest.fn(),
+            findMany: jest.fn(),
+        },
+        $transaction: jest.fn((callback) => callback({
+            wallet: {
+                findUnique: jest.fn().mockResolvedValue({ balance: 0 }),
+                update: jest.fn().mockResolvedValue({ balance: 1000 }),
+            },
+            transaction: {
+                create: jest.fn().mockResolvedValue({ id: 'tx-1' }),
+            },
+        })),
+    };
+    return {
+        PrismaClient: jest.fn(() => mockPrisma),
+        TransactionType: { DEPOSIT: 'DEPOSIT', WITHDRAW: 'WITHDRAW' },
+        TransactionStatus: { PENDING: 'PENDING', COMPLETED: 'COMPLETED' },
+    };
+});
+describe('Wallet Controller', () => {
+    let mockReq;
+    let mockRes;
+    let prisma;
+    beforeEach(() => {
+        prisma = new client_1.PrismaClient();
+        mockReq = {
+            user: { userId: 'user-1', phoneNumber: '0792325646', role: 'USER', isAgeVerified: true },
+        };
+        mockRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+        };
+        jest.clearAllMocks();
     });
-    afterAll(async () => {
-        await prisma.$disconnect();
-    });
-    describe('POST /api/wallet/deposit', () => {
-        it('should deposit money and update balance', async () => {
-            const response = await (0, supertest_1.default)(index_1.default)
-                .post('/api/wallet/deposit')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ amount: 1000 });
-            expect(response.status).toBe(200);
-            expect(response.body.message).toBe('Deposit successful');
-            expect(response.body.balance).toBe(1000);
+    describe('getBalance', () => {
+        it('should return 401 if user not authenticated', async () => {
+            mockReq.user = undefined;
+            await (0, walletController_1.getBalance)(mockReq, mockRes);
+            expect(mockRes.status).toHaveBeenCalledWith(401);
         });
-        it('should reject deposit below minimum (1 KES)', async () => {
-            const response = await (0, supertest_1.default)(index_1.default)
-                .post('/api/wallet/deposit')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ amount: 0.5 });
-            expect(response.status).toBe(400);
-        });
-        it('should create transaction record on deposit', async () => {
-            await (0, supertest_1.default)(index_1.default)
-                .post('/api/wallet/deposit')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ amount: 1000 });
-            const transactions = await prisma.transaction.findMany({
-                where: { userId },
+        it('should return balance if user exists', async () => {
+            prisma.wallet.findUnique.mockResolvedValue({
+                balance: 5000,
             });
-            expect(transactions.length).toBe(1);
-            expect(transactions[0].type).toBe('DEPOSIT');
-            expect(Number(transactions[0].amount)).toBe(1000);
+            await (0, walletController_1.getBalance)(mockReq, mockRes);
+            expect(mockRes.json).toHaveBeenCalledWith({ balance: 5000 });
         });
     });
-    describe('POST /api/wallet/withdraw', () => {
-        beforeEach(async () => {
-            await (0, supertest_1.default)(index_1.default)
-                .post('/api/wallet/deposit')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ amount: 1000 });
+    describe('deposit', () => {
+        it('should return 400 if amount is less than 1 KES', async () => {
+            mockReq.body = { phoneNumber: '0722000000', amount: 0.5 };
+            await (0, walletController_1.deposit)(mockReq, mockRes);
+            expect(mockRes.status).toHaveBeenCalledWith(400);
         });
-        it('should withdraw money with sufficient balance', async () => {
-            const response = await (0, supertest_1.default)(index_1.default)
-                .post('/api/wallet/withdraw')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ amount: 500 });
-            expect(response.status).toBe(200);
-            expect(response.body.message).toBe('Withdrawal successful');
-            expect(response.body.balance).toBe(500);
-        });
-        it('should block withdrawal with insufficient funds', async () => {
-            const response = await (0, supertest_1.default)(index_1.default)
-                .post('/api/wallet/withdraw')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ amount: 2000 });
-            expect(response.status).toBe(400);
-            expect(response.body.error).toBe('Insufficient balance');
-        });
-        it('should reject withdrawal below minimum (100 KES)', async () => {
-            const response = await (0, supertest_1.default)(index_1.default)
-                .post('/api/wallet/withdraw')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ amount: 50 });
-            expect(response.status).toBe(400);
-            expect(response.body.error).toBe('Minimum withdrawal is 100 KES');
-        });
-    });
-    describe('GET /api/wallet/balance', () => {
-        it('should return correct balance', async () => {
-            await (0, supertest_1.default)(index_1.default)
-                .post('/api/wallet/deposit')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ amount: 500 });
-            const response = await (0, supertest_1.default)(index_1.default)
-                .get('/api/wallet/balance')
-                .set('Authorization', `Bearer ${authToken}`);
-            expect(response.status).toBe(200);
-            expect(response.body.balance).toBe(500);
-        });
-    });
-    describe('GET /api/wallet/transactions', () => {
-        it('should return transaction history', async () => {
-            await (0, supertest_1.default)(index_1.default)
-                .post('/api/wallet/deposit')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ amount: 1000 });
-            const response = await (0, supertest_1.default)(index_1.default)
-                .get('/api/wallet/transactions')
-                .set('Authorization', `Bearer ${authToken}`);
-            expect(response.status).toBe(200);
-            expect(response.body.transactions.length).toBeGreaterThan(0);
-            expect(response.body.pagination).toBeDefined();
-        });
-    });
-    describe('Transaction rollback on error', () => {
-        it('should rollback deposit on error', async () => {
-            const response = await (0, supertest_1.default)(index_1.default)
-                .post('/api/wallet/deposit')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ amount: -100 });
-            expect(response.status).toBe(400);
-            const wallet = await prisma.wallet.findUnique({
-                where: { userId },
-            });
-            expect(Number(wallet?.balance)).toBe(0);
+        it('should process deposit successfully', async () => {
+            mockReq.body = { phoneNumber: '0722000000', amount: 1000 };
+            await (0, walletController_1.deposit)(mockReq, mockRes);
+            expect(mockRes.status).toHaveBeenCalledWith(200);
         });
     });
 });

@@ -46,7 +46,7 @@ describe('Wallet Controller', () => {
   beforeEach(() => {
     prisma = new PrismaClient();
     mockReq = {
-      user: { userId: 'user-1' },
+      user: { userId: 'user-1', phoneNumber: '0792325646', role: 'USER', isAgeVerified: true },
     };
     mockRes = {
       status: jest.fn().mockReturnThis(),

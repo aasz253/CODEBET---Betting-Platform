@@ -11,6 +11,11 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
-  }
+  },
+  build: {
+    rollupOptions: {
+      external: ['socket.io-client'],
+    },
+  },
 })
 

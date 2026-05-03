@@ -8,8 +8,8 @@ interface WalletState {
 
 export const useWalletStore = create<WalletState>((set) => ({
   balance: 0,
-  setBalance: (balance) => set({ balance }),
-  deductBalance: (amount) => set((state) => ({ 
+  setBalance: (balance: number) => set({ balance }),
+  deductBalance: (amount: number) => set((state: WalletState) => ({ 
     balance: Math.max(0, state.balance - amount) 
   })),
 }))
