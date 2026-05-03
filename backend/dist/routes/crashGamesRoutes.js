@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const crashGamesController_1 = require("../controllers/crashGamesController");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticate);
+router.post('/session', crashGamesController_1.createGameSession);
+router.post('/bet', crashGamesController_1.placeBet);
+router.post('/cashout', crashGamesController_1.cashOut);
+router.get('/history', crashGamesController_1.getGameHistory);
+exports.default = router;

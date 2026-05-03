@@ -1,0 +1,15 @@
+module.exports = {
+  BarChart: ({ children }) => children,
+  Bar: () => null,
+  XAxis: () => null,
+  YAxis: () => null,
+  CartesianGrid: () => null,
+  Tooltip: () => null,
+  Legend: () => null,
+  LineChart: ({ children }) => children,
+  Line: () => null,
+  PieChart: ({ children }) => children,
+  Pie: () => null,
+  Cell: () => null,
+  ResponsiveContainer: ({ children }) => children,
+};

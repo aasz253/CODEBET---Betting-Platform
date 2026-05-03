@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const oddsController_1 = require("../controllers/oddsController");
+const eventController_1 = require("../controllers/eventController");
+const router = (0, express_1.Router)();
+router.get('/live', oddsController_1.getLiveOdds);
+router.get('/event/:eventId', oddsController_1.getEventMarkets);
+router.get('/events', eventController_1.getEvents);
+router.get('/events/sports', eventController_1.getSports);
+router.get('/events/leagues', eventController_1.getLeagues);
+router.get('/events/:eventId/live', eventController_1.getLiveMatch);
+exports.default = router;

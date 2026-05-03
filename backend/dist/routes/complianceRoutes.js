@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const complianceController_1 = require("../controllers/complianceController");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticate, (0, auth_1.authorize)('ADMIN'));
+router.get('/audit-logs', complianceController_1.getAuditLogs);
+router.get('/export', complianceController_1.exportAuditLog);
+router.get('/daily-summary', complianceController_1.getDailySummary);
+router.get('/responsible-gaming-report', complianceController_1.getResponsibleGamingReport);
+router.post('/send-report', complianceController_1.sendComplianceReport);
+exports.default = router;

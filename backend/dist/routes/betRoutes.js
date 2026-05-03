@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const ageVerification_1 = require("../middleware/ageVerification");
+const betController_1 = require("../controllers/betController");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticate);
+router.use(ageVerification_1.requireAgeVerified);
+router.post('/slip', betController_1.createBetSlip);
+router.post('/place', betController_1.placeBet);
+router.get('/history', betController_1.getBetHistory);
+router.get('/calculate/:betSlipId', betController_1.calculateWin);
+exports.default = router;
