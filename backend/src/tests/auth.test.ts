@@ -38,7 +38,7 @@ describe('Auth Controller', () => {
 
   describe('register', () => {
     it('should return 400 if required fields are missing', async () => {
-      mockReq.body = { phoneNumber: '0722000000' };
+      mockReq.body = { phoneNumber: '0792325646' };
       
       await register(mockReq as Request, mockRes as Response);
       
@@ -47,7 +47,7 @@ describe('Auth Controller', () => {
 
     it('should return 409 if user already exists', async () => {
       mockReq.body = {
-        phoneNumber: '0722000000',
+        phoneNumber: '0792325646',
         password: 'password',
         fullName: 'Test User',
         idNumber: '12345678',
@@ -64,7 +64,7 @@ describe('Auth Controller', () => {
 
     it('should register user successfully', async () => {
       mockReq.body = {
-        phoneNumber: '0722000000',
+        phoneNumber: '0792325646',
         password: 'password',
         fullName: 'Test User',
         idNumber: '12345678',
@@ -75,7 +75,7 @@ describe('Auth Controller', () => {
       (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
       (prisma.user.create as jest.Mock).mockResolvedValue({
         id: '1',
-        phoneNumber: '0722000000',
+        phoneNumber: '0792325646',
         fullName: 'Test User',
         isAgeVerified: true,
         role: 'USER',
@@ -90,7 +90,7 @@ describe('Auth Controller', () => {
 
   describe('login', () => {
     it('should return 400 if phone or password missing', async () => {
-      mockReq.body = { phoneNumber: '0722000000' };
+      mockReq.body = { phoneNumber: '0792325646' };
       
       await login(mockReq as Request, mockRes as Response);
       
@@ -98,7 +98,7 @@ describe('Auth Controller', () => {
     });
 
     it('should return 401 if user not found', async () => {
-      mockReq.body = { phoneNumber: '0722000000', password: 'password' };
+      mockReq.body = { phoneNumber: '0792325646', password: 'wrongpass' };
       (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
       
       await login(mockReq as Request, mockRes as Response);
