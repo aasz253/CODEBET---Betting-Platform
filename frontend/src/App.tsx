@@ -23,7 +23,7 @@ function App() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
